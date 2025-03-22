@@ -1,13 +1,7 @@
 import streamlit as st
-from firebase_setup import db
-import google.generativeai as genai
 import datetime
 import random
 import plotly.graph_objs as go
-
-
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
-model = genai.GenerativeModel("gemini-pro")
 
 # Fake mood and savings data for past 7 days (replace with Firestore data later)
 dates = [datetime.date.today() - datetime.timedelta(days=i) for i in range(6, -1, -1)]
