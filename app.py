@@ -87,6 +87,7 @@ with left_col:
 
     st.markdown("### Chat with Wellnest")
     chat_container = st.container()
+<<<<<<< HEAD
 
     for message in st.session_state.messages:
         role = message["role"]
@@ -95,6 +96,23 @@ with left_col:
         speaker = "You" if role == "user" else "Wellnest"
         st.markdown(f'<div class="chat-message {css_class}"><b>{speaker}:</b> {content}</div>', unsafe_allow_html=True)
 
+=======
+ with chat_container:
+    for message in st.session_state.messages:
+        role = message["role"]
+        content = message["content"]
+        css_class = "user-message" if role == "user" else "assistant-message"
+        speaker = "You" if role == "user" else "Wellnest"
+
+        # Add dynamic background only for assistant
+        style = f"background-color: {emotion_color}20;" if role == "assistant" else ""
+
+        st.markdown(
+            f'<div class="chat-message {css_class}" style="{style}"><b>{speaker}:</b> {content}</div>',
+            unsafe_allow_html=True
+        )
+
+>>>>>>> 938ee78a288af566af45dbee5fc8bda26336f965
     user_input = st.text_input("Share how you're feeling about your finances...", key="user_input")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -143,4 +161,79 @@ with left_col:
         </div>
         """,
         unsafe_allow_html=True
+<<<<<<< HEAD
     )
+=======
+    )
+
+with right_col:
+    st.markdown("### Emotional Spending Patterns")
+    
+    emotional_spending = st.session_state.emotional_spending
+    
+    if emotional_spending and emotional_spending["by_emotion"]:
+        emotions = list(emotional_spending["by_emotion"].keys())
+        amounts = list(emotional_spending["by_emotion"].values())
+        total = sum(amounts)
+        percentages = [amount / total * 100 for amount in amounts]
+        colors = [EMOTION_COLORS.get(emotion, "#9C27B0") for emotion in emotions]
+        
+        df = pd.DataFrame({
+            "Emotion": [emotion.capitalize() for emotion in emotions],
+            "Percentage": percentages,
+            "Amount": amounts
+        })
+        
+        fig = px.pie(
+            df, 
+            values="Percentage", 
+            names="Emotion", 
+            color_discrete_sequence=colors,
+            title="Spending by Emotion"
+        )
+        fig.update_traces(textinfo='percent+label')
+        fig.update_layout(height=300, margin=dict(t=30, b=0, l=0, r=0))
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown(f"**Total Emotional Spending:** ${emotional_spending['total']:.2f}")
+        
+        potential_savings = calculate_potential_savings(emotional_spending)
+        st.info(f"💡 **Insight:** Reducing emotional spending by half could save you approximately **${potential_savings:.2f}** per month.")
+        
+        current_emotion = st.session_state.current_emotion["emotion"]
+        if current_emotion != "neutral":
+            trigger = get_top_trigger_for_emotion(st.session_state.transactions, current_emotion)
+            if trigger["category"]:
+                st.warning(
+                    f"📊 When feeling **{current_emotion}**, you tend to spend most on **{trigger['category']}** "
+                    f"(avg. ${trigger['amount']:.2f}), particularly during the **{trigger['time_of_day']}**."
+                )
+    else:
+        st.info("No emotional spending data available yet.")
+    
+    st.markdown("### Recent Transactions")
+    
+    if st.session_state.transactions:
+        df = pd.DataFrame(st.session_state.transactions)
+        df = df[["date", "merchant", "amount", "category", "emotion_tag"]]
+        df = df.sort_values("date", ascending=False).head(5)
+        df.columns = ["Date", "Merchant", "Amount ($)", "Category", "Emotion"]
+        
+        def color_emotion(val):
+            color = EMOTION_COLORS.get(val.lower(), "#A5A5A5")
+            return f'background-color: {color}20'
+        
+        styled_df = df.style.map(color_emotion, subset=["Emotion"])
+        styled_df = styled_df.format({"Amount ($)": "${:.2f}"})
+        
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No transaction data available.")
+
+# Footer
+st.markdown("---")
+st.markdown("Wellnest - Your Financial Wellness Companion")
+
+
+>>>>>>> 938ee78a288af566af45dbee5fc8bda26336f965
