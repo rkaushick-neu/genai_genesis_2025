@@ -1,200 +1,493 @@
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objs as go
 import pandas as pd
-from datetime import datetime, timedelta
-import random
-from utils.emotion_utils import EMOTION_COLORS, EMOTION_EMOJIS
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+import os
 from dotenv import load_dotenv
 load_dotenv()
-# -----------------------
-# ✅ Initialize session state
-# -----------------------
-if "checkins" not in st.session_state:
-    st.session_state.checkins = []
-
-if "expenses" not in st.session_state:
-    st.session_state.expenses = [
-        {"date": datetime.today() - timedelta(days=i),
-         "amount": 15 + i * 3,
-         "emotion": "stressed" if i % 2 == 0 else "happy",
-         "category": "Food" if i % 2 == 0 else "Entertainment",
-         "necessity": i % 10 + 1}
-        for i in range(30)
-    ]
-
-# -----------------------
-# 🌿 Page Config
-# -----------------------
-st.set_page_config(page_title="Mintality - Home", page_icon="🌿", layout="wide")
-st.markdown("<h1 style='text-align: center; color: #3f704d;'>🌿 Welcome to Mintality</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Your personalized financial wellness companion</p>", unsafe_allow_html=True)
-
-# -----------------------
-# 🧘 Mood Check-in (Top Section)
-# -----------------------
-st.markdown("## 🧘 Daily Mood Check-In")
-today = datetime.today().date()
-already_checked_in = any(c["Date"] == today for c in st.session_state.checkins)
-
-with st.container():
-    if not already_checked_in:
-        mood_today = st.slider("How's your mood today?", 1, 5, 3, format="😞|🙁|😐|🙂|😄")
-        note = st.text_area("Anything you'd like to reflect on?", placeholder="Optional")
-        if st.button("Submit Check-in", type="primary"):
-            st.session_state.checkins.append({
-                "Date": today,
-                "Mood": mood_today,
-                "Notes": note
-            })
-            st.success("✅ Check-in saved! Scroll down to see your trends 👇")
-    else:
-        today_checkin = [c for c in st.session_state.checkins if c["Date"] == today][0]
-        st.info(f"✅ You've already checked in today. Mood: {today_checkin['Mood']}")
-
-
-# -----------------------
-# 💰 Hero Savings Section
-# -----------------------
-st.markdown("---")
-weekly_budget = 200
-total_spent = sum(e["amount"] for e in st.session_state.expenses[-7:])
-savings = max(0, weekly_budget - total_spent)
-
-st.markdown("### 💸 Your Weekly Financial Wellness Snapshot")
-col1, col2 = st.columns([2, 3])
-with col1:
-    st.markdown(f"<h2 style='color: green;'>💵 ${savings:.2f}</h2>", unsafe_allow_html=True)
-    st.markdown("<h5 style='color: #666;'>Estimated Money Saved This Week</h5>", unsafe_allow_html=True)
-    st.success("🎯 Great job avoiding unnecessary spending!")
-with col2:
-    bar = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=savings,
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Savings Progress"},
-        gauge={'axis': {'range': [0, weekly_budget]},
-               'bar': {'color': "green"},
-               'steps': [{'range': [0, weekly_budget/2], 'color': "#f2f2f2"},
-                         {'range': [weekly_budget/2, weekly_budget], 'color': "#d9f2d9"}]}
-    ))
-    st.plotly_chart(bar, use_container_width=True)
-# 🧠 Display Predicted Emotion from Gemini (if available)
-if "current_emotion" in st.session_state:
-    emotion_info = st.session_state["current_emotion"]
-    emotion = emotion_info["emotion"]
-    confidence = emotion_info["confidence"]
-
-    emotion_color = EMOTION_COLORS.get(emotion, "#BDBDBD")
-    emotion_emoji = EMOTION_EMOJIS.get(emotion, "😐")
-
-    st.markdown("---")
-    st.markdown("### 🧠 Emotion Analysis")
-    st.markdown(
-        f"""
-        <div style="border-left: 6px solid {emotion_color}; background-color: {emotion_color}20;
-                    padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
-            <h4 style="margin: 0 0 0.5rem 0;">Detected Emotion: {emotion_emoji} <span style="text-transform: capitalize;">{emotion}</span></h4>
-            <p style="margin: 0; font-size: 0.9rem; color: #555;">Confidence: <b>{confidence:.2f}</b></p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# -----------------------
-# 📈 Mood Graph (Last 7 Days)
-# -----------------------
-mood_data = st.session_state.checkins[-7:]
-if mood_data:
-    st.markdown("---")
-    st.markdown("### 📈 Mood Trend Over the Week")
-    dates = [entry["Date"] for entry in mood_data]
-    moods = [entry["Mood"] for entry in mood_data]
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=dates, y=moods, mode='lines+markers',
-                             line=dict(color='green', width=3), marker=dict(size=8)))
-    fig.update_layout(yaxis=dict(range=[1, 5], title='Mood Level'),
-                      xaxis_title='Date', height=300,
-                      margin=dict(l=20, r=20, t=30, b=20))
-    st.plotly_chart(fig, use_container_width=True)
-
-# -----------------------
-# 📆 Mood Graph (Last 30 Days)
-# -----------------------
-st.markdown("### 📅 Monthly Mood Tracker")
-dates_30 = [datetime.today().date() - timedelta(days=i) for i in range(29, -1, -1)]
-moods_30 = [random.randint(1, 5) for _ in range(30)]
-df_mood = pd.DataFrame({"Date": dates_30, "Mood": moods_30})
-fig_month = go.Figure()
-fig_month.add_trace(go.Scatter(
-    x=df_mood["Date"],
-    y=df_mood["Mood"],
-    mode='lines+markers',
-    line=dict(color='mediumseagreen', width=3),
-    marker=dict(size=6),
-    name="Mood Level"
-))
-fig_month.update_layout(
-    xaxis_title="Date",
-    yaxis=dict(title="Mood (1 = Low, 5 = High)", range=[1, 5]),
-    hovermode='x unified',
-    height=300
+from utils.gemini_service import render_mood_checkin
+# Import Gemini chat
+from utils.gemini_service import generate_affirmation, analyze_emotion, gemini_chat, generate_advice, generate_motivational_quote
+from utils.transaction_utils import (
+    load_transactions, 
+    analyze_emotional_spending,
+    get_transactions_by_emotion,
+    get_top_trigger_for_emotion,
+    calculate_potential_savings,
+    predict_transaction_emotions
 )
-st.plotly_chart(fig_month, use_container_width=True)
+from utils.emotion_utils import (
+    EMOTION_COLORS,
+    EMOTION_EMOJIS,
+    save_emotional_state,
+    get_emotional_state_history,
+    calculate_emotion_intensity
+)
+from utils.predictive_utils import generate_prediction
 
-# -----------------------
-# 📊 Spending Charts
-# -----------------------
-def create_emotion_spending_chart(expenses):
-    df = pd.DataFrame(expenses)
-    emotion_totals = df.groupby('emotion')['amount'].sum().reset_index().sort_values('amount', ascending=False)
-    fig = px.bar(emotion_totals, x='emotion', y='amount', title='Spending by Emotional State',
-                 labels={'emotion': 'Emotion', 'amount': 'Total Spent ($)'},
-                 color='emotion', color_discrete_sequence=px.colors.qualitative.Set2)
-    return fig
+st.set_page_config(
+    page_title="Mintality - Financial Wellness Assistant",
+    page_icon="💰",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-def create_category_chart(expenses):
-    df = pd.DataFrame(expenses)
-    category_totals = df.groupby('category')['amount'].sum().reset_index()
-    fig = px.pie(category_totals, values='amount', names='category', title='Spending by Category',
-                 color_discrete_sequence=px.colors.qualitative.Pastel)
-    fig.update_traces(textposition='inside', textinfo='percent+label')
-    return fig
+# Initialize session state variables
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Hi there! I'm Wellnest, your financial wellness companion. How are you feeling about your finances today?"}
+    ]
+if "current_emotion" not in st.session_state:
+    st.session_state.current_emotion = {"emotion": "neutral", "confidence": 0.5, "intensity": 0.2}
+if "affirmation" not in st.session_state:
+    st.session_state.affirmation = "My financial choices today create my tomorrow. I have the power to make decisions aligned with my goals."
+if "transactions" not in st.session_state:
+    st.session_state.transactions = load_transactions()
+if "prediction" not in st.session_state:
+    st.session_state.prediction = None
+if "emotional_spending" not in st.session_state:
+    st.session_state.emotional_spending = analyze_emotional_spending(st.session_state.transactions)
+# Add control flags to prevent infinite loop
+if "processing_input" not in st.session_state:
+    st.session_state.processing_input = False
+if "last_processed_message" not in st.session_state:
+    st.session_state.last_processed_message = ""
+# Add intensity asking flag
+if "asking_intensity" not in st.session_state:
+    st.session_state.asking_intensity = False
+# Add emotion confirmation flags
+if "asking_emotion_confirmation" not in st.session_state:
+    st.session_state.asking_emotion_confirmation = False
+if "showing_emotion_selector" not in st.session_state:
+    st.session_state.showing_emotion_selector = False
+if "current_transaction_for_confirmation" not in st.session_state:
+    st.session_state.current_transaction_for_confirmation = None
+if "selected_emotion" not in st.session_state:
+    st.session_state.selected_emotion = None
 
-def create_spending_trend_chart(expenses, days=30):
-    df = pd.DataFrame(expenses)
-    df['date'] = pd.to_datetime(df['date'])
-    end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=days)
-    date_range = pd.date_range(start=start_date, end=end_date)
-    daily_spending = df.groupby(df['date'].dt.date)['amount'].sum().reindex(date_range.date, fill_value=0)
-    trend_df = pd.DataFrame({'date': daily_spending.index, 'amount': daily_spending.values})
-    trend_df['moving_avg'] = trend_df['amount'].rolling(window=7, min_periods=1).mean()
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=trend_df['date'], y=trend_df['amount'], name='Daily Spending',
-                         marker_color='rgba(100, 149, 237, 0.4)'))
-    fig.add_trace(go.Scatter(x=trend_df['date'], y=trend_df['moving_avg'], name='7-Day Avg',
-                             line=dict(color='blue', width=3)))
-    fig.update_layout(title='Spending Trend (Last 30 Days)', xaxis_title='Date',
-                      yaxis_title='Amount Spent ($)', hovermode='x unified')
-    return fig
+st.markdown("""
+<style>
+    .main-header { font-size: 2.5rem; color: #4527A0; margin-bottom: 0px; }
+    .sub-header { font-size: 1.1rem; color: #5E35B1; margin-top: 0px; margin-bottom: 2rem; }
+    .emotion-badge { padding: 0.5rem 1rem; border-radius: 1rem; margin-bottom: 1rem; }
+    .chat-message { padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+    .user-message { background-color: #E3F2FD; border-left: 4px solid #2196F3; }
+    .assistant-message { background-color: #F5F5F5; border-left: 4px solid #9575CD; }
+    .prediction-banner { padding: 1rem; background-color: #FFF8E1; border-left: 4px solid #FFB300; border-radius: 0.5rem; margin-bottom: 1rem; }
+    .affirmation-card { padding: 1.5rem; background: linear-gradient(to right, #E8EAF6, #C5CAE9); border-radius: 0.5rem; margin-bottom: 1rem; }
+    .stButton>button { background-color: #5E35B1; color: white; border: none; border-radius: 4px; padding: 0.5rem 1rem; }
+    .emotion-confirm-card { background-color: #f1f8e9; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+    .intensity-card { background-color: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+</style>
+""", unsafe_allow_html=True)
 
-# -----------------------
-# 📊 Financial Behavior Insights
-# -----------------------
+st.markdown('<h1 class="main-header">Mintality</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Your Financial Wellness Companion</p>', unsafe_allow_html=True)
+
+# Check for transactions that need emotion confirmation
+if (st.session_state.transactions and 
+    not st.session_state.asking_emotion_confirmation and 
+    not st.session_state.asking_intensity and
+    not st.session_state.showing_emotion_selector):
+    # Find transactions without emotion tags or with 'neutral' tag
+    unclassified = [t for t in st.session_state.transactions 
+                    if t.get('emotion_tag') == 'neutral' or not t.get('emotion_tag')]
+    
+    if unclassified and len(unclassified) > 0:
+        classified = [t for t in st.session_state.transactions if t.get('emotion_tag') != 'neutral']
+        
+        if len(classified) > 0:
+            # Get predictions
+            try:
+                predictions = predict_transaction_emotions(unclassified, classified)
+                
+                # Find first low confidence prediction
+                for pred in predictions:
+                    if pred['confidence'] < 0.6:  # Confidence threshold
+                        st.session_state.asking_emotion_confirmation = True
+                        st.session_state.current_transaction_for_confirmation = {
+                            'transaction': pred['transaction'],
+                            'predicted_emotion': pred['predicted_emotion'],
+                            'confidence': pred['confidence']
+                        }
+                        break
+            except Exception as e:
+                st.error(f"Error predicting emotions: {e}")
+
+left_col, right_col = st.columns([2, 1])
+
+with left_col:
+    current_emotion = st.session_state.current_emotion
+    emotion = current_emotion["emotion"]
+    intensity = current_emotion["intensity"]
+    emotion_color = EMOTION_COLORS.get(emotion, "#A5A5A5")
+    emotion_emoji = EMOTION_EMOJIS.get(emotion, "😐")
+    intensity_label = "High" if intensity >= 0.8 else "Medium" if intensity >= 0.5 else "Low"
+
+    st.markdown(f"""
+        <div class="emotion-badge" style="background-color: {emotion_color}20; border-left: 4px solid {emotion_color};">
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 1.8rem; margin-right: 0.5rem;">{emotion_emoji}</span>
+                <div>
+                    <div style="font-weight: bold; text-transform: capitalize;">{emotion}</div>
+                    <div style="font-size: 0.8rem; color: #555;">{intensity_label} intensity</div>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Display emotion confirmation interface if needed
+    if st.session_state.asking_emotion_confirmation:
+        transaction = st.session_state.current_transaction_for_confirmation['transaction']
+        pred_emotion = st.session_state.current_transaction_for_confirmation['predicted_emotion']
+        
+        st.markdown(f"""
+        <div class="emotion-confirm-card">
+            <h3 style="margin-top: 0;">Help Us Understand Your Emotions</h3>
+            <p>For this transaction at <b>{transaction['merchant']}</b> for <b>${transaction['amount']:.2f}</b> on {transaction['date']}, 
+               I think you might have been feeling <b>{pred_emotion}</b>. Is that correct?</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Yes, that's right", key="yes_button"):
+                # Update transaction with confirmed emotion
+                for t in st.session_state.transactions:
+                    if (t['merchant'] == transaction['merchant'] and 
+                        t['amount'] == transaction['amount'] and 
+                        t['date'] == transaction['date']):
+                        t['emotion_tag'] = pred_emotion
+                
+                # Reset confirmation state
+                st.session_state.asking_emotion_confirmation = False
+                st.session_state.current_transaction_for_confirmation = None
+                
+                # Update emotional spending analysis
+                st.session_state.emotional_spending = analyze_emotional_spending(st.session_state.transactions)
+                st.rerun()
+        
+        with col2:
+            if st.button("No, that's not right", key="no_button"):
+                # Set flag to show emotion selector on next run
+                st.session_state.showing_emotion_selector = True
+                st.session_state.asking_emotion_confirmation = False
+                st.rerun()
+    
+    # Display emotion selector if needed
+    elif st.session_state.showing_emotion_selector:
+        transaction = st.session_state.current_transaction_for_confirmation['transaction']
+        
+        st.markdown(f"""
+        <div class="emotion-confirm-card">
+            <h3 style="margin-top: 0;">Select Emotion</h3>
+            <p>For this transaction at <b>{transaction['merchant']}</b> for <b>${transaction['amount']:.2f}</b> on {transaction['date']}, 
+               how were you feeling?</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Show emotion selector
+        emotions = ["stressed", "anxious", "retail_therapy", "happy", "motivated", "neutral"]
+        selected_emotion = st.selectbox("Choose an emotion:", emotions, key="emotion_selector")
+        
+        if st.button("Confirm Emotion", key="confirm_emotion_button"):
+            # Update transaction with user-selected emotion
+            for t in st.session_state.transactions:
+                if (t['merchant'] == transaction['merchant'] and 
+                    t['amount'] == transaction['amount'] and 
+                    t['date'] == transaction['date']):
+                    t['emotion_tag'] = selected_emotion
+            
+            # Reset confirmation states
+            st.session_state.showing_emotion_selector = False
+            st.session_state.current_transaction_for_confirmation = None
+            
+            # Update emotional spending analysis
+            st.session_state.emotional_spending = analyze_emotional_spending(st.session_state.transactions)
+            st.rerun()
+    
+    # Display intensity selection interface if needed
+    elif st.session_state.asking_intensity:
+        emotion = st.session_state.current_emotion["emotion"]
+        
+        st.markdown(f"""
+        <div class="intensity-card">
+            <h3 style="margin-top: 0;">How intensely are you feeling {emotion}?</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        intensity_level = st.slider("Intensity level", 0.1, 1.0, 0.5, 0.1)
+        
+        if st.button("Confirm", key="confirm_intensity_button"):
+            # Update emotional state with user-provided intensity
+            emotional_state = {
+                "emotion": emotion,
+                "confidence": st.session_state.current_emotion["confidence"],
+                "intensity": intensity_level
+            }
+            
+            st.session_state.current_emotion = emotional_state
+            save_emotional_state(emotion, emotional_state["confidence"], intensity_level)
+            
+            # Generate response based on intensity
+            financial_context = {
+                "spending_trigger": None,
+                "recent_emotional_spending": 0,
+                "monthly_savings_goal": 200,
+                "primary_goal": "saving for vacation"
+            }
+            
+            try:
+                if intensity_level < 0.4:
+                    # Low intensity
+                    response = generate_motivational_quote(emotion)
+                else:
+                    # High intensity
+                    response = generate_advice(emotional_state, financial_context)
+                    
+                    # Also generate prediction
+                    prediction = generate_prediction(st.session_state.transactions, emotion)
+                    if prediction:
+                        st.session_state.prediction = prediction
+            except Exception as e:
+                st.error(f"Error generating response: {e}")
+                response = "I understand how you're feeling. Let's take a moment to think about your finances mindfully."
+            
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            
+            # Update affirmation
+            try:
+                affirmation = generate_affirmation(emotion, financial_context["primary_goal"])
+                st.session_state.affirmation = affirmation
+            except Exception as e:
+                st.error(f"Error generating affirmation: {e}")
+            
+            # Reset asking state
+            st.session_state.asking_intensity = False
+            st.rerun()
+    else:
+        # Display prediction if available
+        if st.session_state.prediction:
+            prediction = st.session_state.prediction
+            p_emotion = prediction["emotion"]
+            p_category = prediction["category"]
+            p_amount = prediction["estimated_amount"]
+            p_time = prediction["time_of_day"]
+            
+            # Customize message based on emotion and category
+            if p_emotion == 'stressed' and p_category == 'food':
+                message = f"Based on your patterns, you might be tempted to order food delivery tonight."
+                suggestion = 'Try a quick 15-minute homemade meal instead.'
+            elif p_emotion == 'stressed' and p_category == 'shopping':
+                message = f"You often shop online when feeling stressed, especially in the {p_time}."
+                suggestion = 'Consider a 30-minute break from screens to reset.'
+            elif p_emotion == 'anxious' and p_category == 'food':
+                message = f"Anxiety often leads to food delivery orders (avg. ${p_amount})."
+                suggestion = 'A 10-minute walk might help reduce anxiety.'
+            else:
+                message = f"When feeling {p_emotion}, you often spend on {p_category} (avg. ${p_amount})."
+                suggestion = 'Being aware of this pattern can help make mindful choices.'
+            
+            st.markdown(
+                f"""
+                <div class="prediction-banner">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 1.3rem; margin-right: 0.5rem;">🔮</span>
+                        <h3 style="margin: 0; font-weight: bold;">Spending Insight</h3>
+                    </div>
+                    <p style="margin: 0 0 0.5rem 0;">{message}</p>
+                    <div style="display: flex; align-items: center; color: #7B1FA2; font-weight: bold;">
+                        <span style="margin-right: 0.4rem;">💡</span>
+                        {suggestion}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown("### Chat with Wellnest")
+        chat_container = st.container()
+        
+        with chat_container:
+            for message in st.session_state.messages:
+                role = message["role"]
+                content = message["content"]
+                css_class = "user-message" if role == "user" else "assistant-message"
+                speaker = "You" if role == "user" else "Wellnest"
+
+                # Add dynamic background only for assistant
+                style = f"background-color: {emotion_color}20;" if role == "assistant" else ""
+
+                st.markdown(
+                    f'<div class="chat-message {css_class}" style="{style}"><b>{speaker}:</b> {content}</div>',
+                    unsafe_allow_html=True
+                )
+
+            user_input = st.text_input("Share how you're feeling about your finances...", key="user_input")
+            
+            # Only process input if it's new and we're not already processing
+            if (user_input and 
+                not st.session_state.processing_input and 
+                user_input != st.session_state.last_processed_message and 
+                not st.session_state.asking_intensity and 
+                not st.session_state.asking_emotion_confirmation and
+                not st.session_state.showing_emotion_selector):
+                # Set processing flag to prevent reprocessing
+                st.session_state.processing_input = True
+                st.session_state.last_processed_message = user_input
+                
+                # Add user message to chat
+                st.session_state.messages.append({"role": "user", "content": user_input})
+
+                try:
+                    # Analyze emotion
+                    emotion_result = analyze_emotion(user_input)
+                    emotion = emotion_result["emotion"]
+                    confidence = emotion_result["confidence"]
+
+                    # Calculate intensity
+                    intensity = calculate_emotion_intensity(emotion, confidence)
+                    
+                    # If emotion is strong but confidence is low, ask for intensity
+                    if emotion != "neutral" and confidence < 0.7:
+                        st.session_state.current_emotion = {
+                            "emotion": emotion,
+                            "confidence": confidence,
+                            "intensity": intensity
+                        }
+                        st.session_state.asking_intensity = True
+                        st.session_state.processing_input = False
+                        st.rerun()
+                    
+                    # Otherwise continue normal flow
+                    emotional_state = save_emotional_state(emotion, confidence)
+
+                    # Update current emotion
+                    st.session_state.current_emotion = {
+                        "emotion": emotion,
+                        "confidence": confidence,
+                        "intensity": intensity
+                    }
+
+                    # Generate prediction if available
+                    try:
+                        prediction = generate_prediction(st.session_state.transactions, emotion)
+                        if prediction:
+                            st.session_state.prediction = prediction
+                    except Exception as e:
+                        st.error(f"Error generating prediction: {e}")
+                        prediction = None
+
+                    # Set up financial context
+                    financial_context = {
+                        "spending_trigger": prediction["category"] if prediction else None,
+                        "recent_emotional_spending": prediction["estimated_amount"] if prediction else 0,
+                        "monthly_savings_goal": 200,
+                        "primary_goal": "saving for vacation"
+                    }
+
+                    # Generate response
+                    response = gemini_chat(user_input)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+
+                    # Generate new affirmation for non-neutral emotions
+                    if emotion != 'neutral':
+                        try:
+                            affirmation = generate_affirmation(emotion, financial_context["primary_goal"])
+                            st.session_state.affirmation = affirmation
+                        except Exception as e:
+                            st.error(f"Error generating affirmation: {e}")
+                
+                except Exception as e:
+                    st.error(f"Error processing input: {e}")
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": "I'm having trouble processing that right now. Can you try again or phrase that differently?"
+                    })
+                
+                # Reset processing flag
+                st.session_state.processing_input = False
+                st.rerun()
+
+        # Affirmation card
+        st.markdown(
+            f"""
+            <div class="affirmation-card">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #3949AB;">Today's Financial Affirmation</h3>
+                <p style="font-style: italic; color: #283593; font-size: 1.2rem; margin-bottom: 0;">
+                    "{st.session_state.affirmation}"
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+with right_col:
+    st.markdown("### Emotional Spending Patterns")
+    
+    emotional_spending = st.session_state.emotional_spending
+    
+    if emotional_spending and emotional_spending["by_emotion"]:
+        emotions = list(emotional_spending["by_emotion"].keys())
+        amounts = list(emotional_spending["by_emotion"].values())
+        total = sum(amounts)
+        percentages = [amount / total * 100 for amount in amounts]
+        colors = [EMOTION_COLORS.get(emotion, "#9C27B0") for emotion in emotions]
+        
+        df = pd.DataFrame({
+            "Emotion": [emotion.capitalize() for emotion in emotions],
+            "Percentage": percentages,
+            "Amount": amounts
+        })
+        
+        fig = px.pie(
+            df, 
+            values="Percentage", 
+            names="Emotion", 
+            color_discrete_sequence=colors,
+            title="Spending by Emotion"
+        )
+        fig.update_traces(textinfo='percent+label')
+        fig.update_layout(height=300, margin=dict(t=30, b=0, l=0, r=0))
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown(f"**Total Emotional Spending:** ${emotional_spending['total']:.2f}")
+        
+        potential_savings = calculate_potential_savings(emotional_spending)
+        st.info(f"💡 **Insight:** Reducing emotional spending by half could save you approximately **${potential_savings:.2f}** per month.")
+        
+        current_emotion = st.session_state.current_emotion["emotion"]
+        if current_emotion != "neutral":
+            trigger = get_top_trigger_for_emotion(st.session_state.transactions, current_emotion)
+            if trigger["category"]:
+                st.warning(
+                    f"📊 When feeling **{current_emotion}**, you tend to spend most on **{trigger['category']}** "
+                    f"(avg. ${trigger['amount']:.2f}), particularly during the **{trigger['time_of_day']}**."
+                )
+    else:
+        st.info("No emotional spending data available yet.")
+    
+    st.markdown("### Recent Transactions")
+    
+    if st.session_state.transactions:
+        df = pd.DataFrame(st.session_state.transactions)
+        df = df[["date", "merchant", "amount", "category", "emotion_tag"]]
+        df = df.sort_values("date", ascending=False).head(5)
+        df.columns = ["Date", "Merchant", "Amount ($)", "Category", "Emotion"]
+        
+        def color_emotion(val):
+            color = EMOTION_COLORS.get(str(val).lower(), "#A5A5A5")
+            return f'background-color: {color}20'
+        
+        styled_df = df.style.map(color_emotion, subset=["Emotion"])
+        styled_df = styled_df.format({"Amount ($)": "${:.2f}"})
+        
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No transaction data available.")
+
+# Footer
 st.markdown("---")
-st.markdown("### 📊 Financial Behavior Insights")
-col1, col2 = st.columns(2)
-with col1:
-    st.plotly_chart(create_emotion_spending_chart(st.session_state.expenses), use_container_width=True)
-with col2:
-    st.plotly_chart(create_category_chart(st.session_state.expenses), use_container_width=True)
-
-st.plotly_chart(create_spending_trend_chart(st.session_state.expenses), use_container_width=True)
-
-# -----------------------
-# 🌈 Encouragement
-# -----------------------
-st.markdown("---")
-st.success("🌈 Remember: Every small mindful step adds up — you're doing amazing!")
+st.markdown("Mintality - Your Financial Wellness Companion")
