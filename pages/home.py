@@ -4,7 +4,9 @@ import plotly.graph_objs as go
 import pandas as pd
 from datetime import datetime, timedelta
 import random
-
+from utils.emotion_utils import EMOTION_COLORS, EMOTION_EMOJIS
+from dotenv import load_dotenv
+load_dotenv()
 # -----------------------
 # ✅ Initialize session state
 # -----------------------
@@ -50,6 +52,7 @@ with st.container():
         today_checkin = [c for c in st.session_state.checkins if c["Date"] == today][0]
         st.info(f"✅ You've already checked in today. Mood: {today_checkin['Mood']}")
 
+
 # -----------------------
 # 💰 Hero Savings Section
 # -----------------------
@@ -76,6 +79,27 @@ with col2:
                          {'range': [weekly_budget/2, weekly_budget], 'color': "#d9f2d9"}]}
     ))
     st.plotly_chart(bar, use_container_width=True)
+# 🧠 Display Predicted Emotion from Gemini (if available)
+if "current_emotion" in st.session_state:
+    emotion_info = st.session_state["current_emotion"]
+    emotion = emotion_info["emotion"]
+    confidence = emotion_info["confidence"]
+
+    emotion_color = EMOTION_COLORS.get(emotion, "#BDBDBD")
+    emotion_emoji = EMOTION_EMOJIS.get(emotion, "😐")
+
+    st.markdown("---")
+    st.markdown("### 🧠 Emotion Analysis")
+    st.markdown(
+        f"""
+        <div style="border-left: 6px solid {emotion_color}; background-color: {emotion_color}20;
+                    padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+            <h4 style="margin: 0 0 0.5rem 0;">Detected Emotion: {emotion_emoji} <span style="text-transform: capitalize;">{emotion}</span></h4>
+            <p style="margin: 0; font-size: 0.9rem; color: #555;">Confidence: <b>{confidence:.2f}</b></p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # -----------------------
 # 📈 Mood Graph (Last 7 Days)
