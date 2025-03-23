@@ -135,8 +135,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 👨‍💼 Team
 
-Team Member 1
-
-Team Member 2
-
-Bahati Zhuliduosi
+- Aishwarya Sreenivasan
+- Bahati Zhuliduosi
+- Rishabh Kaushick
