@@ -2,6 +2,7 @@ import os
 import google.generativeai as genai
 import random
 from google.generativeai import GenerativeModel
+from datetime import datetime
 
 # Setup Gemini API
 def setup_gemini():
@@ -155,3 +156,23 @@ def analyze_emotion(user_text):
     confidence = confidence_map.get(emotion, 0.7)
 
     return {"emotion": emotion, "confidence": confidence}
+
+
+# Mood check-in (add to be shown on top of app.py)
+def render_mood_checkin():
+    today = datetime.today().date()
+    if "checkins" not in st.session_state:
+        st.session_state.checkins = []
+
+    already_checked_in = any(c["Date"] == today for c in st.session_state.checkins)
+
+    st.markdown("## 🧘 Daily Mood Check-In")
+    if not already_checked_in:
+        mood_today = st.slider("How's your mood today?", 1, 5, 3, format="%d")
+        note = st.text_area("Anything you'd like to reflect on?", placeholder="Optional")
+        if st.button("Submit Check-in", type="primary"):
+            st.session_state.checkins.append({"Date": today, "Mood": mood_today, "Notes": note})
+            st.success("✅ Check-in saved! Scroll down to continue.")
+    else:
+        today_checkin = [c for c in st.session_state.checkins if c["Date"] == today][0]
+        st.info(f"✅ You've already checked in today. Mood: {today_checkin['Mood']}")

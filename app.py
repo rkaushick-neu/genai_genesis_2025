@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
+from utils.gemini_service import render_mood_checkin
 # Import Gemini chat
 from utils.gemini_service import generate_affirmation, analyze_emotion, gemini_chat
 from utils.transaction_utils import (
@@ -60,7 +60,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-header">Wellnest</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">Mintality</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Your Financial Wellness Companion</p>', unsafe_allow_html=True)
 
 left_col, right_col = st.columns([2, 1])
@@ -87,17 +87,8 @@ with left_col:
 
     st.markdown("### Chat with Wellnest")
     chat_container = st.container()
-<<<<<<< HEAD
-
-    for message in st.session_state.messages:
-        role = message["role"]
-        content = message["content"]
-        css_class = "user-message" if role == "user" else "assistant-message"
-        speaker = "You" if role == "user" else "Wellnest"
-        st.markdown(f'<div class="chat-message {css_class}"><b>{speaker}:</b> {content}</div>', unsafe_allow_html=True)
-
-=======
- with chat_container:
+    
+with chat_container:
     for message in st.session_state.messages:
         role = message["role"]
         content = message["content"]
@@ -112,7 +103,6 @@ with left_col:
             unsafe_allow_html=True
         )
 
->>>>>>> 938ee78a288af566af45dbee5fc8bda26336f965
     user_input = st.text_input("Share how you're feeling about your finances...", key="user_input")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -161,9 +151,6 @@ with left_col:
         </div>
         """,
         unsafe_allow_html=True
-<<<<<<< HEAD
-    )
-=======
     )
 
 with right_col:
@@ -236,4 +223,3 @@ st.markdown("---")
 st.markdown("Wellnest - Your Financial Wellness Companion")
 
 
->>>>>>> 938ee78a288af566af45dbee5fc8bda26336f965
