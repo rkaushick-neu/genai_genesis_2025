@@ -29,19 +29,46 @@ def load_transactions():
         print(f"Error loading transactions: {e}")
         return []
 
+def load_masked_transactions():
+    """Load masked transactions from CSV file"""
+    try:
+        # Path to masked transactions file
+        file_path = os.path.join('data', 'transactions_masked.csv')
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            print(f"Masked transaction file not found at {file_path}")
+            return pd.DataFrame()  # Return empty DataFrame instead of empty list
+        
+        # Read CSV file
+        df = pd.read_csv(file_path)
+        
+        # Add emotion_tag column if it doesn't exist
+        if 'emotion_tag' not in df.columns:
+            df['emotion_tag'] = None
+        
+        # Convert amount to float if it's not already
+        if 'amount' in df.columns:
+            df['amount'] = df['amount'].astype(float)
+        
+        return df
+    
+    except Exception as e:
+        print(f"Error loading masked transactions: {e}")
+        return pd.DataFrame()  # Return empty DataFrame instead of empty list
+
 def analyze_emotional_spending(transactions):
     """Analyze spending patterns related to emotions"""
-    if not transactions:
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
         return {"total": 0, "by_emotion": {}}
     
     # Group transactions by emotion
     emotional_spending = {"total": 0, "by_emotion": {}}
     
-    for transaction in transactions:
-        # Skip neutral emotions
-        if transaction['emotion_tag'] == 'neutral':
-            continue
-        
+    # Skip neutral emotions
+    non_neutral_transactions = transactions[transactions['emotion_tag'] != 'neutral']
+    
+    for _, transaction in non_neutral_transactions.iterrows():
         emotion = transaction['emotion_tag']
         amount = float(transaction['amount'])
         
@@ -56,22 +83,19 @@ def analyze_emotional_spending(transactions):
 
 def get_transactions_by_emotion(transactions, emotion):
     """Filter transactions by emotion"""
-    return [t for t in transactions if t['emotion_tag'] == emotion]
+    if not isinstance(transactions, pd.DataFrame):
+        return []
+    return transactions[transactions['emotion_tag'] == emotion].to_dict('records')
 
 def get_emotional_spending_by_category(transactions, emotion):
     """Get spending by category for a specific emotion"""
-    emotion_transactions = get_transactions_by_emotion(transactions, emotion)
+    if not isinstance(transactions, pd.DataFrame):
+        return {}
     
-    # Group by category
-    category_spending = {}
-    for transaction in emotion_transactions:
-        category = transaction['category']
-        amount = float(transaction['amount'])
-        
-        if category not in category_spending:
-            category_spending[category] = 0
-        
-        category_spending[category] += amount
+    emotion_transactions = transactions[transactions['emotion_tag'] == emotion]
+    
+    # Group by category and sum amounts
+    category_spending = emotion_transactions.groupby('category')['amount'].sum().to_dict()
     
     return category_spending
 
@@ -115,97 +139,77 @@ def calculate_potential_savings(emotional_spending):
 
 def get_spending_trends_by_emotion(transactions, days=30):
     """Get spending trends by emotion over the last N days"""
-    if not transactions:
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
         return {}
     
     # Convert dates to datetime objects
-    for t in transactions:
-        t['date_obj'] = datetime.strptime(t['date'], '%Y-%m-%d')
+    transactions['date_obj'] = pd.to_datetime(transactions['date'])
     
     # Calculate cutoff date
-    latest_date = max(t['date_obj'] for t in transactions)
+    latest_date = transactions['date_obj'].max()
     cutoff_date = latest_date - pd.Timedelta(days=days)
     
     # Filter transactions within time range
-    recent_transactions = [t for t in transactions if t['date_obj'] >= cutoff_date]
+    recent_transactions = transactions[transactions['date_obj'] >= cutoff_date]
     
     # Group by emotion and calculate totals
-    trends = {}
-    for transaction in recent_transactions:
-        emotion = transaction['emotion_tag']
-        
-        if emotion not in trends:
-            trends[emotion] = 0
-        
-        trends[emotion] += transaction['amount']
+    trends = recent_transactions.groupby('emotion_tag')['amount'].sum().to_dict()
     
     return trends
 
 def get_spending_by_day_of_week(transactions, emotion=None):
     """Get spending patterns by day of week, optionally filtered by emotion"""
-    if not transactions:
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
         return {}
     
     # Filter by emotion if specified
     if emotion:
-        transactions = get_transactions_by_emotion(transactions, emotion)
+        transactions = transactions[transactions['emotion_tag'] == emotion]
     
     # Group by day of week
-    day_spending = {
+    day_spending = transactions.groupby('day_of_week')['amount'].sum().to_dict()
+    
+    # Ensure all days are present
+    all_days = {
         "Monday": 0, "Tuesday": 0, "Wednesday": 0, 
         "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0
     }
+    all_days.update(day_spending)
     
-    for transaction in transactions:
-        day = transaction['day_of_week']
-        day_spending[day] += transaction['amount']
-    
-    return day_spending
+    return all_days
 
 def get_spending_by_time_of_day(transactions, emotion=None):
     """Get spending patterns by time of day, optionally filtered by emotion"""
-    if not transactions:
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
         return {}
     
     # Filter by emotion if specified
     if emotion:
-        transactions = get_transactions_by_emotion(transactions, emotion)
+        transactions = transactions[transactions['emotion_tag'] == emotion]
     
     # Group by time of day
-    time_spending = {
+    time_spending = transactions.groupby('time_of_day')['amount'].sum().to_dict()
+    
+    # Ensure all times are present
+    all_times = {
         "morning": 0, "afternoon": 0, "evening": 0, "night": 0
     }
+    all_times.update(time_spending)
     
-    for transaction in transactions:
-        time = transaction['time_of_day']
-        time_spending[time] += transaction['amount']
-    
-    return time_spending
+    return all_times
 
 def get_top_merchants_by_emotion(transactions, emotion, limit=3):
     """Get top merchants for a specific emotion"""
-    emotion_transactions = get_transactions_by_emotion(transactions, emotion)
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
+        return []
     
-    # Group by merchant
-    merchant_spending = {}
-    for transaction in emotion_transactions:
-        merchant = transaction['merchant']
-        amount = transaction['amount']
-        
-        if merchant not in merchant_spending:
-            merchant_spending[merchant] = 0
-        
-        merchant_spending[merchant] += amount
+    # Filter by emotion and group by merchant
+    merchant_spending = transactions[transactions['emotion_tag'] == emotion].groupby('merchant')['amount'].sum()
     
-    # Sort by amount
-    sorted_merchants = sorted(
-        merchant_spending.items(), 
-        key=lambda x: x[1], 
-        reverse=True
-    )
+    # Sort by amount and get top N
+    top_merchants = merchant_spending.sort_values(ascending=False).head(limit)
     
-    # Return top N
-    return sorted_merchants[:limit]
+    return list(zip(top_merchants.index, top_merchants.values))
 
 def tag_transaction_with_emotion(transaction_data, emotion):
     """Add emotion tag to a transaction (for future data)"""
@@ -214,28 +218,10 @@ def tag_transaction_with_emotion(transaction_data, emotion):
 
 def calculate_average_transaction_by_emotion(transactions):
     """Calculate average transaction amount by emotion"""
-    if not transactions:
+    if not isinstance(transactions, pd.DataFrame) or transactions.empty:
         return {}
     
-    # Group by emotion
-    emotion_counts = {}
-    emotion_totals = {}
-    
-    for transaction in transactions:
-        emotion = transaction['emotion_tag']
-        amount = transaction['amount']
-        
-        if emotion not in emotion_counts:
-            emotion_counts[emotion] = 0
-            emotion_totals[emotion] = 0
-        
-        emotion_counts[emotion] += 1
-        emotion_totals[emotion] += amount
-    
-    # Calculate averages
-    averages = {}
-    for emotion in emotion_totals:
-        if emotion_counts[emotion] > 0:
-            averages[emotion] = emotion_totals[emotion] / emotion_counts[emotion]
+    # Group by emotion and calculate mean
+    averages = transactions.groupby('emotion_tag')['amount'].mean().to_dict()
     
     return averages

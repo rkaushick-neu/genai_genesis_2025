@@ -10,7 +10,7 @@ import os
 from utils.cohere_service import analyze_emotion
 from utils.gemini_service import generate_advice, generate_affirmation
 from utils.transaction_utils import (
-    load_transactions, 
+    load_masked_transactions, 
     analyze_emotional_spending,
     get_transactions_by_emotion,
     get_top_trigger_for_emotion,
@@ -40,7 +40,13 @@ if "current_emotion" not in st.session_state:
 if "affirmation" not in st.session_state:
     st.session_state.affirmation = "My financial choices today create my tomorrow. I have the power to make decisions aligned with my goals."
 if "transactions" not in st.session_state:
-    st.session_state.transactions = load_transactions()
+    st.session_state.transactions = load_masked_transactions()
+    # Check if emotion_tag column exists
+    if isinstance(st.session_state.transactions, pd.DataFrame):
+        if 'emotion_tag' not in st.session_state.transactions.columns:
+            st.session_state.transactions['emotion_tag'] = None
+            if "rated_transactions" not in st.session_state:
+                st.session_state.rated_transactions = set()
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
 if "emotional_spending" not in st.session_state:
@@ -104,6 +110,40 @@ st.markdown("""
 # Header
 st.markdown('<h1 class="main-header">Wellnest</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Your Financial Wellness Companion</p>', unsafe_allow_html=True)
+
+# Add this before the left_col, right_col split
+if isinstance(st.session_state.transactions, pd.DataFrame):
+    if 'emotion_tag' in st.session_state.transactions.columns and st.session_state.transactions['emotion_tag'].isna().any():
+        # Get 3 random unrated transactions
+        unrated_mask = st.session_state.transactions['emotion_tag'].isna()
+        unrated_transactions = st.session_state.transactions[unrated_mask]
+        unrated_transactions = unrated_transactions[~unrated_transactions.index.isin(st.session_state.rated_transactions)]
+        
+        if not unrated_transactions.empty:
+            sample_size = min(3, len(unrated_transactions))
+            random_transactions = unrated_transactions.sample(n=sample_size)
+            
+            st.markdown("### 🎯 Help Us Understand Your Spending Emotions")
+            st.write("Please rate how you felt after these transactions:")
+            
+            for idx, transaction in random_transactions.iterrows():
+                col1, col2 = st.columns([3, 2])
+                with col1:
+                    st.write(f"**{transaction['merchant']}** - ${transaction['amount']:.2f}")
+                    st.write(f"Date: {transaction['date']}, Category: {transaction['category']}")
+                
+                with col2:
+                    emotions = ['happy', 'satisfied', 'neutral', 'anxious', 'stressed', 'guilty']
+                    selected_emotion = st.selectbox(
+                        "How did you feel?",
+                        emotions,
+                        key=f"emotion_{idx}"
+                    )
+                    
+                    if st.button("Save", key=f"save_{idx}"):
+                        st.session_state.transactions.at[idx, 'emotion_tag'] = selected_emotion
+                        st.session_state.rated_transactions.add(idx)
+                        st.rerun()
 
 # Layout
 left_col, right_col = st.columns([2, 1])
