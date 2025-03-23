@@ -191,7 +191,7 @@ with left_col:
             if role == "user":
                 st.markdown(f'<div class="chat-message user-message"><b>You:</b> {content}</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="chat-message assistant-message"><b>Wellnest:</b> {content}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="chat-message assistant-message" style="background-color: {emotion_color}20;"><b>Wellnest:</b> {content}</div>', unsafe_allow_html=True)
     
     user_input = st.text_input("Share how you're feeling about your finances...", key="user_input")
     
@@ -303,7 +303,7 @@ with right_col:
             color = EMOTION_COLORS.get(val.lower(), "#A5A5A5")
             return f'background-color: {color}20'
         
-        styled_df = df.style.applymap(color_emotion, subset=["Emotion"])
+        styled_df = df.style.map(color_emotion, subset=["Emotion"])
         styled_df = styled_df.format({"Amount ($)": "${:.2f}"})
         
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
