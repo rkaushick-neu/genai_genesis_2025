@@ -7,7 +7,7 @@ import json
 import os
 
 # Import utilities
-from utils.cohere_service import analyze_emotion
+from utils.emotion_service import analyze_emotion
 from utils.gemini_service import generate_advice, generate_affirmation
 from utils.transaction_utils import (
     load_transactions, 
