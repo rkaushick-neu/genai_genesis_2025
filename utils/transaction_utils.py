@@ -239,3 +239,95 @@ def calculate_average_transaction_by_emotion(transactions):
             averages[emotion] = emotion_totals[emotion] / emotion_counts[emotion]
     
     return averages
+
+# Add to utils/transaction_utils.py
+
+def predict_transaction_emotions(transactions, classified_transactions):
+    """
+    Predict emotions for unclassified transactions based on patterns in classified ones
+    """
+    # Get all classified transaction patterns
+    category_emotion_patterns = {}
+    merchant_emotion_patterns = {}
+    time_emotion_patterns = {}
+    
+    for t in classified_transactions:
+        category = t['category']
+        merchant = t['merchant']
+        time = t['time_of_day']
+        emotion = t['emotion_tag']
+        
+        # Update category-emotion patterns
+        if category not in category_emotion_patterns:
+            category_emotion_patterns[category] = {}
+        if emotion not in category_emotion_patterns[category]:
+            category_emotion_patterns[category][emotion] = 0
+        category_emotion_patterns[category][emotion] += 1
+        
+        # Update merchant-emotion patterns
+        if merchant not in merchant_emotion_patterns:
+            merchant_emotion_patterns[merchant] = {}
+        if emotion not in merchant_emotion_patterns[merchant]:
+            merchant_emotion_patterns[merchant][emotion] = 0
+        merchant_emotion_patterns[merchant][emotion] += 1
+        
+        # Update time-emotion patterns
+        if time not in time_emotion_patterns:
+            time_emotion_patterns[time] = {}
+        if emotion not in time_emotion_patterns[time]:
+            time_emotion_patterns[time][emotion] = 0
+        time_emotion_patterns[time][emotion] += 1
+    
+    # Function to get most common emotion
+    def get_most_common_emotion(patterns):
+        if not patterns:
+            return "neutral", 0.5
+        
+        most_common = max(patterns.items(), key=lambda x: x[1])
+        total = sum(patterns.values())
+        confidence = most_common[1] / total
+        return most_common[0], confidence
+    
+    # Predict emotions for unclassified transactions
+    predictions = []
+    for t in transactions:
+        if t.get('emotion_tag') == 'neutral' or not t.get('emotion_tag'):
+            category = t['category']
+            merchant = t['merchant']
+            time = t['time_of_day']
+            
+            # Get predictions from different factors
+            category_emotion, category_conf = get_most_common_emotion(
+                category_emotion_patterns.get(category, {})
+            )
+            merchant_emotion, merchant_conf = get_most_common_emotion(
+                merchant_emotion_patterns.get(merchant, {})
+            )
+            time_emotion, time_conf = get_most_common_emotion(
+                time_emotion_patterns.get(time, {})
+            )
+            
+            # Weight the different factors
+            emotions = [
+                (category_emotion, category_conf * 0.5),
+                (merchant_emotion, merchant_conf * 0.3),
+                (time_emotion, time_conf * 0.2)
+            ]
+            
+            # Group by emotion and sum weights
+            combined_weights = {}
+            for emotion, weight in emotions:
+                if emotion not in combined_weights:
+                    combined_weights[emotion] = 0
+                combined_weights[emotion] += weight
+            
+            # Select the emotion with highest combined weight
+            final_emotion, confidence = get_most_common_emotion(combined_weights)
+            
+            predictions.append({
+                'transaction': t,
+                'predicted_emotion': final_emotion,
+                'confidence': confidence
+            })
+    
+    return predictions

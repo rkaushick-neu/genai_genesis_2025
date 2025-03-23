@@ -176,3 +176,16 @@ def render_mood_checkin():
     else:
         today_checkin = [c for c in st.session_state.checkins if c["Date"] == today][0]
         st.info(f"✅ You've already checked in today. Mood: {today_checkin['Mood']}")
+        
+        
+ ## add this 
+def generate_motivational_quote(emotion):
+    """Generate a motivational quote for low-intensity emotions"""
+    prompt = f"""
+    Generate a short, motivational message for someone experiencing mild {emotion} 
+    about their finances. Keep it brief (2-3 sentences), positive and encouraging.
+    Focus on small steps and progress rather than intense advice.
+    """
+    
+    response = generate_content(prompt)
+    return response
