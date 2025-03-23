@@ -25,7 +25,7 @@ from utils.emotion_utils import (
 )
 
 st.set_page_config(
-    page_title="Wellnest - Financial Wellness Assistant",
+    page_title="Mintality - Financial Wellness Assistant",
     page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded"
