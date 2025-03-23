@@ -3,6 +3,7 @@ import google.generativeai as genai
 import random
 from google.generativeai import GenerativeModel
 from datetime import datetime
+import streamlit as st
 
 # Setup Gemini API
 def setup_gemini():
