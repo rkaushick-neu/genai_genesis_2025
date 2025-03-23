@@ -166,14 +166,14 @@ with left_col:
                 
                 # Update emotional spending analysis
                 st.session_state.emotional_spending = analyze_emotional_spending(st.session_state.transactions)
-                st.experimental_rerun()
+                st.rerun()
         
         with col2:
             if st.button("No, that's not right", key="no_button"):
                 # Set flag to show emotion selector on next run
                 st.session_state.showing_emotion_selector = True
                 st.session_state.asking_emotion_confirmation = False
-                st.experimental_rerun()
+                st.rerun()
     
     # Display emotion selector if needed
     elif st.session_state.showing_emotion_selector:
@@ -205,7 +205,7 @@ with left_col:
             
             # Update emotional spending analysis
             st.session_state.emotional_spending = analyze_emotional_spending(st.session_state.transactions)
-            st.experimental_rerun()
+            st.rerun()
     
     # Display intensity selection interface if needed
     elif st.session_state.asking_intensity:
@@ -265,7 +265,7 @@ with left_col:
             
             # Reset asking state
             st.session_state.asking_intensity = False
-            st.experimental_rerun()
+            st.rerun()
     else:
         # Display prediction if available
         if st.session_state.prediction:
@@ -358,7 +358,7 @@ with left_col:
                         }
                         st.session_state.asking_intensity = True
                         st.session_state.processing_input = False
-                        st.experimental_rerun()
+                        st.rerun()
                     
                     # Otherwise continue normal flow
                     emotional_state = save_emotional_state(emotion, confidence)
@@ -408,7 +408,7 @@ with left_col:
                 
                 # Reset processing flag
                 st.session_state.processing_input = False
-                st.experimental_rerun()
+                st.rerun()
 
         # Affirmation card
         st.markdown(
