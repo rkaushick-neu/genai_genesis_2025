@@ -36,7 +36,7 @@ st.set_page_config(
 # Initialize session state variables
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi there! I'm Wellnest, your financial wellness companion. How are you feeling about your finances today?"}
+        {"role": "assistant", "content": "Hi there! I'm Mintality, your financial wellness companion. How are you feeling about your finances today?"}
     ]
 if "current_emotion" not in st.session_state:
     st.session_state.current_emotion = {"emotion": "neutral", "confidence": 0.5, "intensity": 0.2}
@@ -306,7 +306,7 @@ with left_col:
                 unsafe_allow_html=True
             )
 
-        st.markdown("### Chat with Wellnest")
+        st.markdown("### Chat with Mintiality")
         chat_container = st.container()
         
         with chat_container:
@@ -314,7 +314,7 @@ with left_col:
                 role = message["role"]
                 content = message["content"]
                 css_class = "user-message" if role == "user" else "assistant-message"
-                speaker = "You" if role == "user" else "Wellnest"
+                speaker = "You" if role == "user" else "Mintality"
 
                 # Add dynamic background only for assistant
                 style = f"background-color: {emotion_color}20;" if role == "assistant" else ""
