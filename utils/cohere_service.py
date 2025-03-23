@@ -1,7 +1,9 @@
 import os
 import cohere
 import re
-
+from dotenv import load_dotenv 
+# Load environment variables
+load_dotenv()
 # Examples for emotion classification
 EMOTION_EXAMPLES = [
     {"text": "I'm so overwhelmed with all these bills piling up", "label": "stressed"},
@@ -22,7 +24,13 @@ EMOTION_EXAMPLES = [
     
     {"text": "I paid my regular bills today", "label": "neutral"},
     {"text": "I'm thinking about my monthly budget", "label": "neutral"},
-    {"text": "I need to check my account balance", "label": "neutral"}
+    {"text": "I need to check my account balance", "label": "neutral"},
+
+    {"text": "I feel so defeated by my financial situation", "label": "sad"},
+    {"text": "It's hard to stay positive when everything feels so hopeless", "label": "sad"},
+    {"text": "I can't stop thinking about how much I've failed financially", "label": "sad"},
+    {"text": "I feel like I'll never get out of this financial mess", "label": "sad"},
+    {"text": "Thinking about my finances just makes me want to cry", "label": "sad"}
 ]
 
 def analyze_emotion(text):
@@ -65,7 +73,8 @@ def fallback_emotion_detection(text):
         "retail_therapy": ['treat myself', 'deserve', 'shopping', 'buy something'],
         "motivated": ['excited', 'progress', 'control', 'achieving', 'saving'],
         "happy": ['happy', 'glad', 'pleased', 'delighted', 'joy'],
-        "neutral": ['regular', 'normal', 'usual', 'typical']
+        "neutral": ['regular', 'normal', 'usual', 'typical'],
+        "sad": ['defeated', 'hopeless', 'failed', 'mess', 'cry', 'sad']
     }
     
     # Count keyword matches for each emotion

@@ -1,24 +1,24 @@
-"date,merchant,amount,category,time_of_day,day_of_week,emotion_tag"
-"2023-03-15,Grocery Store,45.32,groceries,afternoon,Wednesday,neutral"
-"2023-03-16,Coffee Shop,4.75,food,morning,Thursday,neutral"
-"2023-03-16,Amazon,89.99,shopping,evening,Thursday,stressed"
-"2023-03-17,UberEats,32.50,food,evening,Friday,stressed"
-"2023-03-18,Target,67.25,shopping,afternoon,Saturday,happy"
-"2023-03-19,Netflix,14.99,entertainment,evening,Sunday,neutral"
-"2023-03-20,Gas Station,48.75,transportation,morning,Monday,neutral"
-"2023-03-21,UberEats,28.45,food,evening,Tuesday,anxious"
-"2023-03-22,Online Shopping,124.50,shopping,night,Wednesday,stressed"
-"2023-03-23,Pharmacy,22.35,health,afternoon,Thursday,neutral"
-"2023-03-24,Restaurant,85.60,food,evening,Friday,happy"
-"2023-03-25,Grocery Store,52.10,groceries,morning,Saturday,neutral"
-"2023-03-26,Movie Theater,32.00,entertainment,evening,Sunday,happy"
-"2023-03-27,Coffee Shop,6.25,food,morning,Monday,anxious"
-"2023-03-28,UberEats,35.75,food,night,Tuesday,stressed"
-"2023-03-29,Amazon,45.99,shopping,night,Wednesday,anxious"
-"2023-03-30,Fast Food,12.85,food,afternoon,Thursday,stressed"
-"2023-03-31,Utility Bill,95.40,bills,morning,Friday,anxious"
-"2023-04-01,Clothing Store,135.75,shopping,afternoon,Saturday,happy"
-"2023-04-02,Grocery Store,48.25,groceries,afternoon,Sunday,neutral"
-"2023-04-03,Online Shopping,78.50,shopping,night,Monday,stressed"
-"2023-04-04,UberEats,42.30,food,night,Tuesday,stressed"
-"2023-04-05,Subscription,9.99,entertainment,morning,Wednesday,neutral change"
+date,merchant,amount,category,time_of_day,day_of_week,emotion_tag
+2023-03-15,Grocery Store,45.32,groceries,afternoon,Wednesday,neutral 
+2023-03-16,Coffee Shop,4.75,food,morning,Thursday,neutral 
+2023-03-16,Amazon,89.99,shopping,evening,Thursday,stressed 
+2023-03-17,UberEats,32.50,food,evening,Friday,stressed 
+2023-03-18,Target,67.25,shopping,afternoon,Saturday,happy 
+2023-03-19,Netflix,14.99,entertainment,evening,Sunday,neutral 
+2023-03-20,Gas Station,48.75,transportation,morning,Monday,neutral 
+2023-03-21,UberEats,28.45,food,evening,Tuesday,anxious 
+2023-03-22,Online Shopping,124.50,shopping,night,Wednesday,stressed 
+2023-03-23,Pharmacy,22.35,health,afternoon,Thursday,neutral 
+2023-03-24,Restaurant,85.60,food,evening,Friday,happy 
+2023-03-25,Grocery Store,52.10,groceries,morning,Saturday,neutral 
+2023-03-26,Movie Theater,32.00,entertainment,evening,Sunday,happy 
+2023-03-27,Coffee Shop,6.25,food,morning,Monday,anxious 
+2023-03-28,UberEats,35.75,food,night,Tuesday,stressed 
+2023-03-29,Amazon,45.99,shopping,night,Wednesday,anxious 
+2023-03-30,Fast Food,12.85,food,afternoon,Thursday,stressed 
+2023-03-31,Utility Bill,95.40,bills,morning,Friday,anxious 
+2023-04-01,Clothing Store,135.75,shopping,afternoon,Saturday,happy 
+2023-04-02,Grocery Store,48.25,groceries,afternoon,Sunday,neutral 
+2023-04-03,Online Shopping,78.50,shopping,night,Monday,stressed 
+2023-04-04,UberEats,42.30,food,night,Tuesday,stressed 
+2023-04-05,Subscription,9.99,entertainment,morning,Wednesday,neutral change
